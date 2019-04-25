@@ -35,7 +35,7 @@ typedef struct{
 	int s; //number of set index bits 2^s
 	int E; //number of lines per set
 	int b; //number of block bits 2^b
-	const char*t; //name of valgrind
+	char*t; //name of valgrind
 }Arguments;
 
 /*function proto*/
@@ -132,16 +132,17 @@ void initCache(Arguments *args, Cache* cache){
 	}
 }
 
-void parseTrace(Operation *operation, const char* tracename){
+void parseTrace(Operation *operation, char* tracename){
 	FILE *fp = fopen(tracename, "rt");
+	const char i = 'I';
 	char op;
 	int addr,size;
 	int index = 0;
 
 	while(fscanf(fp, "%c %x, %d", &op, &addr, &size) != EOF) {
-		if (strcmp(*op, 'I') == 0) //skip I operation
+		if (strcmp(&op, &i) == 0) //skip I operation
 			continue;
-		operation[index].op = op;
+		operation[index].op = &op;
 		operation[index].size = size;
 		operation[index].addr = addr;
 		index++;
