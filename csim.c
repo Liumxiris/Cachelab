@@ -23,8 +23,10 @@ typedef struct{
 	Cacheset* sets;
 }Cache;
 
+enum opt_type {load, modify, store};
+
 typedef struct{
-	char* op;
+	enum opt_type op;
 	int addr;
 	int size;
 }Operation;
@@ -44,19 +46,22 @@ int getSet(Operation *op, Arguments* args);
 int get_arg(int argc, char* argv[], Arguments *args);
 void usage();
 void initCache(Arguments *args, Cache* cache);
-void parseTrace(Operation *op, char* tracename);
+int parseTrace(Operation *op, char* tracename);
 
 /*initialize arguments*/
 
 
 
-int main(int agrc, char* argv[]){
-	int miss,hit,eviction = 0;
+int main(int argc, char* argv[]){
+	int* miss,hit,eviction = 0;
 
 	Cache cache;
 	Arguments *args;
-	Operation *op;
+	Operation *ops;
 
+	const char lChar = 'L';
+	const char sChar = 'S';
+	const char mChar = 'M';
 
 	args = malloc(sizeof(Arguments));
 	int h,v,s,E,b = 0;
@@ -66,7 +71,44 @@ int main(int agrc, char* argv[]){
 	args->b = b;
 	get_arg(argc, argv, args);
 	initCache(args, &cache);
-	parseTrace(op, args->t);
+	int opsLength = parseTrace(ops, args->t);
+	ops = malloc(sizeof(Operation) * opsLength);
+
+
+	FILE *fp = fopen(args->t, "rt");
+
+	char op;
+	int addr;
+	int size;
+	int index = 0;
+	while(fscanf(fp, "%c %x, %d\n", &op, &addr, &size) != EOF) {
+		if (strcmp(&op, &lChar)) {
+			ops[index].op = load;
+		} else if (strcmp(&op, &sChar)) {
+			ops[index].op = store;
+		} else if (strcmp(&op, &mChar)){
+			ops[index].op = modify;
+		}
+		ops[index].size = size;
+		ops[index].addr = addr;
+		index++;
+	}
+	fclose(fp);
+
+
+	for (int i = 0; i < opsLength; i++) {
+		switch (ops[i].op) {
+			case load:
+				load(miss, hit, eviction, &cache);
+				break;
+			case modify:
+				load(miss, hit, eviction, &cache);
+			case store:
+				store(miss, hit, eviction, &cache);
+				break;
+
+		}
+	}
 	//    printSummary(0, 0, 0);
 	return 0;
 }
@@ -132,20 +174,18 @@ void initCache(Arguments *args, Cache* cache){
 	}
 }
 
-void parseTrace(Operation *operation, char* tracename){
+int parseTrace(Operation *operation, char* tracename){
 	FILE *fp = fopen(tracename, "rt");
-	const char i = 'I';
-	char op;
-	int addr,size;
-	int index = 0;
 
-	while(fscanf(fp, "%c %x, %d", &op, &addr, &size) != EOF) {
-		if (strcmp(&op, &i) == 0) //skip I operation
-			continue;
-		operation[index].op = &op;
-		operation[index].size = size;
-		operation[index].addr = addr;
+	int index = 0;
+	char op;
+	int addr;
+	int size;
+
+	while(fscanf(fp, "%c %x, %d\n", &op, &addr, &size) != EOF) {
 		index++;
 	}
 	fclose(fp);
+
+	return index;
 }
