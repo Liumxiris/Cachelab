@@ -151,10 +151,12 @@ void updateCache (int* miss, int* hit, int* eviction, Cache* cache, Arguments* a
 	} else {
 		*hit ++;
 	}
-	if (lineIdx == -1) {
-		Cacheline* findLRU(cache, getSet(operation, args));
+	if (lineIdx < 0) {
+		Cacheline* lru = findLRU(cache, getSet(operation, args));
+		lru->tag_bit = getTag(operation, args);
+		lru->valid_bit = 1;
+		lru->counter ++;
 	}
-
 }
 
 Cacheline* findLRU(Cache* cache, int setIdx) {
