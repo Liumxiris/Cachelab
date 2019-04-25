@@ -1,4 +1,5 @@
-/* Mingxi Liu*/
+/* Mingxi Liu
+ * Kepei Lei*/
 
 #include "cachelab.h"
 #include <unistd.h>
@@ -43,36 +44,42 @@ typedef struct{
 /*function proto*/
 int getTag(Operation *op, Arguments* args);
 int getSet(Operation *op, Arguments* args);
-int get_arg(int argc, char* argv[], Arguments *args);
+void get_arg(int argc, char* argv[], Arguments *args);
 void usage();
 void initCache(Arguments *args, Cache* cache);
-int parseTrace(Operation *op, char* tracename);
+int parseTrace(char* tracename);
+void storeCache(int* miss,int* hit,int* eviction,Cache* cache);
+void loadCache(int* miss,int* hit,int* eviction,Cache* cache);
 
 /*initialize arguments*/
 
 
 
 int main(int argc, char* argv[]){
-	int* miss,hit,eviction = 0;
+	int miss = 0;
+	int hit = 0;
+	int eviction = 0;
 
 	Cache cache;
 	Arguments *args;
-	Operation *ops;
 
 	const char lChar = 'L';
 	const char sChar = 'S';
 	const char mChar = 'M';
 
 	args = malloc(sizeof(Arguments));
-	int h,v,s,E,b = 0;
-	char*t;
+	int h = 0;
+	int v = 0;
+	int s = 0;
+	int E = 0;
+	int b = 0;
 	args->h = h; args->v = v;
 	args->s = s; args->E = E;
 	args->b = b;
 	get_arg(argc, argv, args);
 	initCache(args, &cache);
-	int opsLength = parseTrace(ops, args->t);
-	ops = malloc(sizeof(Operation) * opsLength);
+	int opsLength = parseTrace(args->t);
+    Operation *ops = malloc(sizeof(Operation) * opsLength);
 
 
 	FILE *fp = fopen(args->t, "rt");
@@ -99,18 +106,41 @@ int main(int argc, char* argv[]){
 	for (int i = 0; i < opsLength; i++) {
 		switch (ops[i].op) {
 			case load:
-				load(miss, hit, eviction, &cache);
+				loadCache(&miss, &hit, &eviction, &cache);
 				break;
 			case modify:
-				load(miss, hit, eviction, &cache);
+				loadCache(&miss, &hit, &eviction, &cache);
 			case store:
-				store(miss, hit, eviction, &cache);
+				storeCache(&miss, &hit, &eviction, &cache);
 				break;
 
 		}
 	}
 	//    printSummary(0, 0, 0);
 	return 0;
+}
+
+void loadCache (int* miss, int* hit, int* eviction, Cache* cache) {
+
+}
+
+void storeCache (int* miss, int* hit, int* eviction, Cache* cache) {
+
+}
+
+Cacheline* findLRU(Cache* cache) {
+    Cacheline* lru;
+    int min = 0x8fffffff;
+    for (int i = 0; i < (cache->num_set); i++) {
+        for (int j = 0; j < (cache->num_line); j++) {
+            Cacheline line = (cache -> sets[i]).lines[j];
+            if ( line.counter < min) {
+                min = line.counter;
+                lru = &line;
+            }
+        }
+    }
+    return lru;
 }
 
 int getTag(Operation *op, Arguments* args){
@@ -125,7 +155,7 @@ int getSet(Operation *op, Arguments* args){
 	return addr & mask;
 }
 
-int get_arg(int argc, char* argv[], Arguments *args){
+void get_arg(int argc, char* argv[], Arguments *args){
 	int c = 0;
 	while ((c = getopt(argc,argv, "hvs:E:b:t:")) != -1) {
 		switch(c){
@@ -174,7 +204,7 @@ void initCache(Arguments *args, Cache* cache){
 	}
 }
 
-int parseTrace(Operation *operation, char* tracename){
+int parseTrace(char* tracename){
 	FILE *fp = fopen(tracename, "rt");
 
 	int index = 0;
