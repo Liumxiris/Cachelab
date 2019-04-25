@@ -48,8 +48,8 @@ void get_arg(int argc, char* argv[], Arguments *args);
 void usage();
 void initCache(Arguments *args, Cache* cache);
 int parseTrace(char* tracename);
-void storeCache(int* miss,int* hit,int* eviction,Cache* cache);
-void loadCache(int* miss,int* hit,int* eviction,Cache* cache);
+void updateCache(int* miss,int* hit,int* eviction,Cache* cache, Arguments* args, Operation* operation);
+int isMiss (Cache* cache, Operation* operation, Arguments* args);
 
 /*initialize arguments*/
 
@@ -88,7 +88,7 @@ int main(int argc, char* argv[]){
 	int addr;
 	int size;
 	int index = 0;
-	while(fscanf(fp, "%c %x, %d\n", &op, &addr, &size) != EOF) {
+	while(fscanf(fp, " %c %x, %d\n", &op, &addr, &size) != EOF) {
 		if (strcmp(&op, &lChar)) {
 			ops[index].op = load;
 		} else if (strcmp(&op, &sChar)) {
@@ -104,41 +104,68 @@ int main(int argc, char* argv[]){
 
 
 	for (int i = 0; i < opsLength; i++) {
-		switch (ops[i].op) {
+		switch (operation -> op) {
 			case load:
-				loadCache(&miss, &hit, &eviction, &cache);
+				updateCache(&miss, &hit, &eviction, &cache, args, ops);
 				break;
 			case modify:
-				loadCache(&miss, &hit, &eviction, &cache);
+				updateCache(&miss, &hit, &eviction, &cache, args, ops);
 			case store:
-				storeCache(&miss, &hit, &eviction, &cache);
+				updateCache(&miss, &hit, &eviction, &cache, args, ops);
 				break;
-
 		}
+		ops++;
 	}
 	//    printSummary(0, 0, 0);
 	return 0;
 }
 
-void loadCache (int* miss, int* hit, int* eviction, Cache* cache) {
+int isMiss (Cache* cache, Operation* operation, Arguments* args) {
+	int tag = getTag(operation, args);
+	int set = getSet(operation, args);
+	int validCount = 0;
+	for (int i = 0; i < (cache->num_line); i++) {
+			Cacheline line = (cache -> sets[set]).lines[i];
+			if (line.valid_bit != 0) {
+				if (line.tag_bit == tag) {
+					return i; //hit
+				} else {
+					validCount++;
+				}
+		}
+			line.counter++; //Accessed once
+	}
+	if ((validCount + 1) == cache->num_line) {
+		return -1; //needs eviction
+	} else {
+		return -2; //just a miss
+	}
+}
+
+
+void updateCache (int* miss, int* hit, int* eviction, Cache* cache, Arguments* args, Operation* operation) {
+	int lineIdx = isMiss(cache, operation, args);
+	if (lineIdx < 0) {
+		*miss ++;
+		if (lineIdx == -1) *eviction ++;
+	} else {
+		*hit ++;
+	}
+	if (lineIdx == -1) {
+		Cacheline* findLRU(cache, getSet(operation, args));
+	}
 
 }
 
-void storeCache (int* miss, int* hit, int* eviction, Cache* cache) {
-
-}
-
-Cacheline* findLRU(Cache* cache) {
+Cacheline* findLRU(Cache* cache, int setIdx) {
     Cacheline* lru;
     int min = 0x8fffffff;
-    for (int i = 0; i < (cache->num_set); i++) {
         for (int j = 0; j < (cache->num_line); j++) {
-            Cacheline line = (cache -> sets[i]).lines[j];
-            if ( line.counter < min) {
+            Cacheline line = (cache -> sets[setIdx]).lines[j];
+            if (line.counter < min) {
                 min = line.counter;
                 lru = &line;
             }
-        }
     }
     return lru;
 }
@@ -212,7 +239,7 @@ int parseTrace(char* tracename){
 	int addr;
 	int size;
 
-	while(fscanf(fp, "%c %x, %d\n", &op, &addr, &size) != EOF) {
+	while(fscanf(fp, " %c %x, %d\n", &op, &addr, &size) != EOF) {
 		index++;
 	}
 	fclose(fp);
