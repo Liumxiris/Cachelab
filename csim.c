@@ -50,6 +50,7 @@ void initCache(Arguments *args, Cache* cache);
 int parseTrace(char* tracename);
 void updateCache(int* miss,int* hit,int* eviction,Cache* cache, Arguments* args, Operation* operation);
 int isMiss (Cache* cache, Operation* operation, Arguments* args);
+int getLeastLine(Cache* cache, int setIdx);
 
 /*initialize arguments*/
 
@@ -104,7 +105,7 @@ int main(int argc, char* argv[]){
 
 
 	for (int i = 0; i < opsLength; i++) {
-		switch (operation -> op) {
+		switch (ops -> op) {
 			case load:
 				updateCache(&miss, &hit, &eviction, &cache, args, ops);
 				break;
@@ -152,24 +153,26 @@ void updateCache (int* miss, int* hit, int* eviction, Cache* cache, Arguments* a
 		*hit ++;
 	}
 	if (lineIdx < 0) {
-		Cacheline* lru = findLRU(cache, getSet(operation, args));
-		lru->tag_bit = getTag(operation, args);
-		lru->valid_bit = 1;
-		lru->counter ++;
+		int setIdx = getSet(operation, args);
+		int lineIdx = getLeastLine(cache, setIdx);
+		Cacheline line = cache->sets[setIdx].lines[lineIdx];
+		line.tag_bit = getTag(operation, args);
+		line.valid_bit = 1;
+		line.counter ++;
 	}
 }
 
-Cacheline* findLRU(Cache* cache, int setIdx) {
-    Cacheline* lru;
+int getLeastLine(Cache* cache, int setIdx) {
+    int minIdx = cache->num_line;
     int min = 0x8fffffff;
         for (int j = 0; j < (cache->num_line); j++) {
             Cacheline line = (cache -> sets[setIdx]).lines[j];
             if (line.counter < min) {
                 min = line.counter;
-                lru = &line;
+                minIdx = j;
             }
     }
-    return lru;
+    return minIdx;
 }
 
 int getTag(Operation *op, Arguments* args){
