@@ -117,7 +117,7 @@ int main(int argc, char* argv[]){
 		}
 		ops++;
 	}
-	//    printSummary(0, 0, 0);
+	printSummary(hit, miss, eviction);
 	return 0;
 }
 
@@ -147,10 +147,10 @@ int isMiss (Cache* cache, Operation* operation, Arguments* args) {
 void updateCache (int* miss, int* hit, int* eviction, Cache* cache, Arguments* args, Operation* operation) {
 	int lineIdx = isMiss(cache, operation, args);
 	if (lineIdx < 0) {
-		*miss ++;
-		if (lineIdx == -1) *eviction ++;
+		*miss = *miss +1;
+		if (lineIdx == -1) *eviction = *eviction+1;
 	} else {
-		*hit ++;
+		*hit =*hit +1;
 	}
 	if (lineIdx < 0) {
 		int setIdx = getSet(operation, args);
