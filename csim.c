@@ -50,10 +50,11 @@ int needEviction(Cache* cache, int set);
 int miss;
 int hit;
 int eviction;
+int RECENT_USE;
 
 int main(int argc, char* argv[]){
 	//initialize arguments
-	miss = hit = eviction = 0;
+	miss = hit = eviction = RECENT_USE = 0;
 	Cache cache;
 	Arguments *args;
 
@@ -69,6 +70,8 @@ int main(int argc, char* argv[]){
 	get_arg(argc, argv, args);
 	initCache(args, &cache);
 
+	if (args->h == 1)
+		usage();
 	//open the trace file
 	FILE *fp = fopen(args->t, "r");
 	char str[80];
@@ -90,6 +93,7 @@ int main(int argc, char* argv[]){
 		}
 		else if (strcmp(op, "S") == 0)
 			cacheLoad(&cache, args, addr);
+		RECENT_USE++;
 		if (args->v == 1)
 			printf("\n");
 	}
@@ -162,7 +166,7 @@ void cacheLoad(Cache* cache, Arguments* args, unsigned long addr){
 void updateCache (Cache* cache, int tag, int set, int idx, unsigned long addr) {
 	cache->sets[set].lines[idx].tag_bit = tag;
 	cache->sets[set].lines[idx].valid_bit = 1;
-	cache->sets[set].lines[idx].counter+=1;
+	cache->sets[set].lines[idx].counter = RECENT_USE;
 }
 /**
  * check if there's a miss
@@ -280,7 +284,17 @@ void get_arg(int argc, char* argv[], Arguments *args){
  * @return int, tag bits
  */
 void usage(){
-puts("Usage: [-hv] -s <s> -E <E> -b <b> -t <tracefile>");
+puts("Options:");
+puts("  -h         Print this help message.");
+puts("  -v         Optional verbose flag.");
+puts("  -s <num>   Number of set index bits.");
+puts("  -E <num>   Number of lines per set.");
+puts("  -b <num>   Number of block offset bits.");
+puts("  -t <file>  Trace file.");
+puts("Examples:");
+puts("  linux>  ./csim-ref -s 4 -E 1 -b 4 -t traces/yi.trace");
+puts("  linux>  ./csim-ref -v -s 8 -E 2 -b 4 -t traces/yi.trace");
+
 }
 /**
  * initiate the cache
