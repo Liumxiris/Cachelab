@@ -44,7 +44,6 @@ void cacheLoad(Cache* cache, Arguments* args, unsigned long addr);
 void updateCache (Cache* cache, int tag, int set, int idx, unsigned long addr);
 int isMiss (Cache* cache, unsigned long addr, Arguments* args);
 int getLeastLine(Cache* cache, int setIdx);
-//void printSummary(int hit,int miss, int eviction);
 int needEviction(Cache* cache, int set);
 
 /*initialize arguments*/
@@ -53,7 +52,7 @@ int hit;
 int eviction;
 
 int main(int argc, char* argv[]){
-	puts("running");
+	//initialize arguments
 	miss = hit = eviction = 0;
 	Cache cache;
 	Arguments *args;
@@ -70,14 +69,19 @@ int main(int argc, char* argv[]){
 	get_arg(argc, argv, args);
 	initCache(args, &cache);
 
+	//open the trace file
 	FILE *fp = fopen(args->t, "r");
 	char str[80];
 
 	while(fgets(str,80,fp)!=NULL) {
 		char op[10];
 		unsigned long addr = -1;int size = -1;
+		//match lines with pattern[space][operation][space][address],[size]
 		sscanf(str," %c %lx,%d", op, &addr, &size);
-		printf("%s, %lx ", op,addr);
+		//print trace if argument v is set
+		if (args->v == 1)
+			printf("%s, %lx ", op,addr);
+		//ignore operation I
 		if (strcmp(op, "I") == 0) continue;
 		if (strcmp(op, "L") == 0)
 			cacheLoad(&cache, args, addr);
@@ -86,30 +90,49 @@ int main(int argc, char* argv[]){
 		}
 		else if (strcmp(op, "S") == 0)
 			cacheLoad(&cache, args, addr);
-		printf("\n");
+		if (args->v == 1)
+			printf("\n");
 	}
 	fclose(fp);
 	printSummary(hit, miss, eviction);
 	return 0;
 }
+/**
+ * when opration is modify, calls cacheload twice
+ * @param Cache* cache
+ * @param Arguments* agrs, user inputs
+ * @param unsigned long addr, address of data
+ * @return void
+ */
 void cacheModify(Cache* cache, Arguments* args, unsigned long addr){
 	cacheLoad(cache,args,addr);
 	cacheLoad(cache,args,addr);
 }
-
+/**
+ * Load operation, update cache according to the address called on
+ * @param Cache* cache
+ * @param Arguments* agrs, user inputs
+ * @param unsigned long addr, address of data
+ * @return void
+ */
 void cacheLoad(Cache* cache, Arguments* args, unsigned long addr){
+	//retrieve tag and set bits
 	int tag = getTag(addr, args);
 	int set = getSet(addr, args);
+	//check whether there's a miss
 	int missIdx = isMiss (cache, addr, args);
 	if( missIdx == -1){ //miss
 		miss++;
-		printf("Miss ");
+		if (args->v ==1)
+			printf("Miss ");
+		//check if needs eviction
 		int evicIdx = needEviction(cache, set);
 		if (evicIdx == -1){//need eviction
-			printf("Eviction ");
+			if (args->v ==1)
+				printf("Eviction ");
 			eviction++;
 			int idx = getLeastLine(cache, set);//find lru index
-			cache->sets[set].lines[idx].counter = 0;
+			cache->sets[set].lines[idx].counter = 0; //set the counter of evicted line to 0
 			updateCache (cache, tag, set,idx, addr);
 		}
 		else{ //doesn't need eviction
@@ -119,17 +142,36 @@ void cacheLoad(Cache* cache, Arguments* args, unsigned long addr){
 	}
 	else{ // hit
 		hit++;
-		printf("Hit ");
+		if (args->v ==1)
+			printf("Hit ");
 		updateCache (cache,tag, set, missIdx, addr);
 	}
 }
-
+/**
+ * update the cacheline:
+ *   set the tag-bits to given value
+ *   set the valid-bit to 1
+ *   counter increment
+ * @param Cache* cache
+ * @param int tag
+ * @param int set
+ * @param int idx, the index of target cacheline
+ * @param unsigned long addr, address of data
+ * @return void
+ */
 void updateCache (Cache* cache, int tag, int set, int idx, unsigned long addr) {
 	cache->sets[set].lines[idx].tag_bit = tag;
 	cache->sets[set].lines[idx].valid_bit = 1;
 	cache->sets[set].lines[idx].counter+=1;
 }
-
+/**
+ * check if there's a miss
+ * @param Cache* cache
+ * @param unsigned long addr, address of data
+ * @param Arguments* agrs, user inputs
+ * @return -1 if there's a miss
+ *         otherwise there's a hit and return its index number
+ */
 int isMiss (Cache* cache, unsigned long addr, Arguments* args) {
 	int tag = getTag(addr, args);
     int set = getSet(addr, args);
@@ -140,24 +182,36 @@ int isMiss (Cache* cache, unsigned long addr, Arguments* args) {
 	}
 	return -1;
 }
-
+/**
+ * check if eviction is needed
+ * @param Cache* cache
+ * @param int set
+ * @return -1 if current cache set is full
+ *         otherwise it return the index of available cacheline
+ */
 int needEviction(Cache* cache, int set){
 	int flag = -1;
 	for (int i = 0; i < (cache->num_line); i++) {
 	   Cacheline line = (cache -> sets[set]).lines[i];
-	   if (line.valid_bit == 0){
+	   if (line.valid_bit == 0){ //if valid_bit is 0, this cacheline is available
 		   flag = i;
 		   break;
 	   }
 	}
 	 return flag;
 }
-
+/**
+ * return the index of least recently used cacheline
+ * @param Cache* cache
+ * @param int setIdx, index of given cache set
+ * @return index of the LRU cacheline
+ */
 int getLeastLine(Cache* cache, int setIdx) {
-    int minIdx = -1;
+    int minIdx = 0;
     int min = (cache -> sets[setIdx]).lines[0].counter;
         for (int j = 0; j < (cache->num_line); j++) {
             int count = (cache -> sets[setIdx]).lines[j].counter;
+            //check if the counter of current cacheline is smaller than min
             if (count <= min) {
                 min = count;
                 minIdx = j;
@@ -165,19 +219,33 @@ int getLeastLine(Cache* cache, int setIdx) {
     }
     return minIdx;
 }
-
+/**
+ * retrieve the tag bits of given address
+ * @param unsigned long addr, address of data
+ * @param Arguments* agrs, user inputs
+ * @return int, tag bits
+ */
 int getTag(unsigned long address, Arguments* args){
-	int mask = args->b+args->s;
-	int tag = address>>mask;
-	return tag;
+	unsigned int mask = args->b+args->s;
+	return address >> mask;
 }
-
+/**
+ * retrieve the set bits of given address
+ * @param unsigned long addr, address of data
+ * @param Arguments* agrs, user inputs
+ * @return int, set bits
+ */
 int getSet(unsigned long address, Arguments* args){
-	int addr = (address) >> (args->b);
-	int mask = (1<<(args->s))-1;
-	return addr & mask;
+	unsigned int mask = (1<<(args->s+args->b))-(1<<(args->b));
+	return (address & mask)>>args->b;
 }
-
+/**
+ * read the arguments from user inputs
+ * @param int argc, the number of user inputs
+ * @param char* argv[]
+ * @param Arguments* agrs, user inputs
+ * @return void
+ */
 void get_arg(int argc, char* argv[], Arguments *args){
 	char c = 0;
 	while ((c = getopt(argc,argv, "hvs:E:b:t:")) != -1) {
@@ -198,6 +266,7 @@ void get_arg(int argc, char* argv[], Arguments *args){
 			args->b = atoi(optarg);
 			break;
 		case 't':
+			//dynamically allocate memory for trace file name
 			args->t = (char*)malloc(sizeof(char)*strlen(optarg));
 			strcpy(args->t, optarg);
 			break;
@@ -206,20 +275,29 @@ void get_arg(int argc, char* argv[], Arguments *args){
 		}
 	}
 }
-
+/**
+ * display the usage information
+ * @return int, tag bits
+ */
 void usage(){
 puts("Usage: [-hv] -s <s> -E <E> -b <b> -t <tracefile>");
 }
-
+/**
+ * initiate the cache
+ * @param Arguments* agrs, user inputs
+ * @param Cache* cache
+ * @return void
+ */
 void initCache(Arguments *args, Cache* cache){
 	cache->num_set = (1<<args->s); //2^s
 	cache->num_line = args->E; //E lines per set
 	cache->sets = (Cacheset*)malloc(cache->num_set*sizeof(Cacheset));
-
+	//initialize every cacheset and cacheline
 	int x,y;
 	for (x = 0; x < cache->num_set; x++){
 		cache->sets[x].lines = (Cacheline*)malloc((args->E)*sizeof(Cacheline));
 		for (y = 0; y < cache->num_line; y++){
+			//set the default value for every cacheline
 			cache->sets[x].lines[y].valid_bit = 0;
 			cache->sets[x].lines[y].tag_bit = -1;
 			cache->sets[x].lines[y].counter = 0;
