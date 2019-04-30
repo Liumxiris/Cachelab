@@ -62,62 +62,6 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
         // Next step, we move the top right of B to where it should be (bottom left) and move the bottom left in A into
         // the top right of B (This is the key operation)
         // We finish the bottom right corner moving
-        for (i = 0; i < 64; i += 8) {
-            for (j = 0; j < 64; j += 8) {
-                for(k = j;k < j + 4; ++k){
-                    tmp1 = A[k][i];
-                    tmp2 = A[k][i + 1];
-                    tmp3 = A[k][i + 2];
-                    tmp4 = A[k][i + 3];
-                    tmp5 = A[k][i + 4];
-                    tmp6 = A[k][i + 5];
-                    tmp7 = A[k][i + 6];
-                    tmp8 = A[k][i + 7];
-
-                    B[i][k] = tmp1;
-                    B[i + 1][k] = tmp2;
-                    B[i + 2][k] = tmp3;
-                    B[i + 3][k] = tmp4;
-                    B[i][k+ 4] = tmp5;
-                    B[i + 1][k + 4] = tmp6;
-                    B[i + 2][k + 4] = tmp7;
-                    B[i + 3][k + 4] = tmp8;
-                }
-                for(k= i;k< i + 4; ++k){
-                    tmp1 = B[k][j + 4];
-                    tmp2 = B[k][j + 5];
-                    tmp3 = B[k][j + 6];
-                    tmp4 = B[k][j + 7];
-                    tmp5 = A[j + 4][k];
-                    tmp6 = A[j + 5][k];
-                    tmp7 = A[j + 6][k];
-                    tmp8 = A[j + 7][k];
-
-                    B[k + 4][j] = tmp1;
-                    B[k + 4][j + 1] = tmp2;
-                    B[k + 4][j + 2] = tmp3;
-                    B[k + 4][j + 3] = tmp4;
-                    B[k][j + 4] = tmp5;
-                    B[k][j + 5] = tmp6;
-                    B[k][j + 6] = tmp7;
-                    B[k][j + 7] = tmp8;
-                }
-                for(k= i + 4;k < i + 8; ++k){
-                    tmp1 = A[j + 4][k];
-                    tmp2 = A[j + 5][k];
-                    tmp3 = A[j + 6][k];
-                    tmp4 = A[j + 7][k];
-
-                    B[k][j + 4] = tmp1;
-                    B[k][j + 5] = tmp2;
-                    B[k][j + 6] = tmp3;
-                    B[k][j + 7] = tmp4;
-                }
-            }
-        }
-    } else {
-        // Divide up into 16x16 blocks, and deal with left overs
-        // Somehow this is easier than 64 x 64
         for(i = 0; i < N; i += 8)
         {
             for(j = 0; j < M; j += 8)
@@ -125,49 +69,49 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
                 //For each row in the 8*4 block
                 for(k = 0; k < 4; k++)
                 {
-                    val0 = A[i + k][j + 0];
-                    val1 = A[i + k][j + 1];
-                    val2 = A[i + k][j + 2];
-                    val3 = A[i + k][j + 3];
-                    val4 = A[i + k][j + 4];
-                    val5 = A[i + k][j + 5];
-                    val6 = A[i + k][j + 6];
-                    val7 = A[i + k][j + 7];
-                    B[j + 0][i + k] = val0;
-                    B[j + 1][i + k] = val1;
-                    B[j + 2][i + k] = val2;
-                    B[j + 3][i + k] = val3;
-                    B[j + 0][i + 4 + k] = val4;
-                    B[j + 1][i + 4 + k] = val5;
-                    B[j + 2][i + 4 + k] = val6;
-                    B[j + 3][i + 4 + k] = val7;
+                    tmp1 = A[i + k][j + 0];
+                    tmp2 = A[i + k][j + 1];
+                    tmp2 = A[i + k][j + 2];
+                    tmp3 = A[i + k][j + 3];
+                    tmp4 = A[i + k][j + 4];
+                    tmp5 = A[i + k][j + 5];
+                    tmp6 = A[i + k][j + 6];
+                    tmp7 = A[i + k][j + 7];
+                    B[j + 0][i + k] = tmp1;
+                    B[j + 1][i + k] = tmp2;
+                    B[j + 2][i + k] = tmp3;
+                    B[j + 3][i + k] = tmp4;
+                    B[j + 0][i + 4 + k] = tmp5;
+                    B[j + 1][i + 4 + k] = tmp6;
+                    B[j + 2][i + 4 + k] = tmp7;
+                    B[j + 3][i + 4 + k] = tmp8;
 
                 }
                 //First copy the first 4 rows
                 for(k = 0; k < 4; k++)//Do the fantastic transformation!
                 {
                     //get this row of the right-upper 4*4 block
-                    val0 = B[j + k][i + 4];
-                    val1 = B[j + k][i + 5];
-                    val2 = B[j + k][i + 6];
-                    val3 = B[j + k][i + 7];
-                    //update this row to its correct value
-                    val4 = A[i + 4][j + k];
-                    val5 = A[i + 5][j + k];
-                    val6 = A[i + 6][j + k];
-                    val7 = A[i + 7][j + k];
+                    tmp1 = B[j + k][i + 4];
+                    tmp2 = B[j + k][i + 5];
+                    tmp3 = B[j + k][i + 6];
+                    tmp4 = B[j + k][i + 7];
+                    //update this row to its correct tmpue
+                    tmp5 = A[i + 4][j + k];
+                    tmp6 = A[i + 5][j + k];
+                    tmp7 = A[i + 6][j + k];
+                    tmp8 = A[i + 7][j + k];
 
 
-                    B[j + k][i + 4] = val4;
-                    B[j + k][i + 5] = val5;
-                    B[j + k][i + 6] = val6;
-                    B[j + k][i + 7] = val7;
+                    B[j + k][i + 4] = tmp5;
+                    B[j + k][i + 5] = tmp6;
+                    B[j + k][i + 6] = tmp7;
+                    B[j + k][i + 7] = tmp8;
 
                     //update the left lower 4*4 block of B
-                    B[j + 4 + k][i + 0] = val0;
-                    B[j + 4 + k][i + 1] = val1;
-                    B[j + 4 + k][i + 2] = val2;
-                    B[j + 4 + k][i + 3] = val3;
+                    B[j + 4 + k][i + 0] = tmp1;
+                    B[j + 4 + k][i + 1] = tmp2;
+                    B[j + 4 + k][i + 2] = tmp3;
+                    B[j + 4 + k][i + 3] = tmp4;
                 }
                 //update the right lower 4*4 block
                 for(k = 4; k < 8; k++)
@@ -176,57 +120,113 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
             }
 
         }
-//        for (i = 0; i+16 < N; i+=16) {
-//            for (j = 0; j+16 < M; j+=16) {
-//                for (k = i; k < i+16; ++k) {
-//                    tmp1 = A[k][j];
-//                    tmp2 = A[k][j + 1];
-//                    tmp3 = A[k][j + 2];
-//                    tmp4 = A[k][j + 3];
-//                    tmp5 = A[k][j + 4];
-//                    tmp6 = A[k][j + 5];
-//                    tmp7 = A[k][j + 6];
-//                    tmp8 = A[k][j + 7];
-//                    B[j][k] = tmp1;
-//                    B[j + 1][k] = tmp2;
-//                    B[j + 2][k] = tmp3;
-//                    B[j + 3][k] = tmp4;
-//                    B[j + 4][k] = tmp5;
-//                    B[j + 5][k] = tmp6;
-//                    B[j + 6][k] = tmp7;
-//                    B[j + 7][k] = tmp8;
+//        for (i = 0; i < 64; i += 8) {
+//            for (j = 0; j < 64; j += 8) {
+//                for(k = j;k < j + 4; ++k){
+//                    tmp1 = A[k][i];
+//                    tmp2 = A[k][i + 1];
+//                    tmp3 = A[k][i + 2];
+//                    tmp4 = A[k][i + 3];
+//                    tmp5 = A[k][i + 4];
+//                    tmp6 = A[k][i + 5];
+//                    tmp7 = A[k][i + 6];
+//                    tmp8 = A[k][i + 7];
 //
-//                    tmp1 = A[k][j + 8];
-//                    tmp2 = A[k][j + 9];
-//                    tmp3 = A[k][j + 10];
-//                    tmp4 = A[k][j + 11];
-//                    tmp5 = A[k][j + 12];
-//                    tmp6 = A[k][j + 13];
-//                    tmp7 = A[k][j + 14];
-//                    tmp8 = A[k][j + 15];
-//                    B[j + 8][k] = tmp1;
-//                    B[j + 9][k] = tmp2;
-//                    B[j + 10][k] = tmp3;
-//                    B[j + 11][k] = tmp4;
-//                    B[j + 12][k] = tmp5;
-//                    B[j + 13][k] = tmp6;
-//                    B[j + 14][k] = tmp7;
-//                    B[j + 15][k] = tmp8;
+//                    B[i][k] = tmp1;
+//                    B[i + 1][k] = tmp2;
+//                    B[i + 2][k] = tmp3;
+//                    B[i + 3][k] = tmp4;
+//                    B[i][k+ 4] = tmp5;
+//                    B[i + 1][k + 4] = tmp6;
+//                    B[i + 2][k + 4] = tmp7;
+//                    B[i + 3][k + 4] = tmp8;
+//                }
+//                for(k= i;k< i + 4; ++k){
+//                    tmp1 = B[k][j + 4];
+//                    tmp2 = B[k][j + 5];
+//                    tmp3 = B[k][j + 6];
+//                    tmp4 = B[k][j + 7];
+//                    tmp5 = A[j + 4][k];
+//                    tmp6 = A[j + 5][k];
+//                    tmp7 = A[j + 6][k];
+//                    tmp8 = A[j + 7][k];
 //
+//                    B[k + 4][j] = tmp1;
+//                    B[k + 4][j + 1] = tmp2;
+//                    B[k + 4][j + 2] = tmp3;
+//                    B[k + 4][j + 3] = tmp4;
+//                    B[k][j + 4] = tmp5;
+//                    B[k][j + 5] = tmp6;
+//                    B[k][j + 6] = tmp7;
+//                    B[k][j + 7] = tmp8;
+//                }
+//                for(k= i + 4;k < i + 8; ++k){
+//                    tmp1 = A[j + 4][k];
+//                    tmp2 = A[j + 5][k];
+//                    tmp3 = A[j + 6][k];
+//                    tmp4 = A[j + 7][k];
+//
+//                    B[k][j + 4] = tmp1;
+//                    B[k][j + 5] = tmp2;
+//                    B[k][j + 6] = tmp3;
+//                    B[k][j + 7] = tmp4;
 //                }
 //            }
 //        }
-//
-//        for (k = i; k < N; ++k) {
-//            for (l = 0; l < M; ++l){
-//                B[l][k] = A[k][l];
-//            }
-//        }
-//        for (k = 0; k < i; ++k) {
-//            for (l = j; l < M; ++l) {
-//                B[l][k] = A[k][l];
-//            }
-//        }
+    } else {
+        // Divide up into 16x16 blocks, and deal with left overs
+        // Somehow this is easier than 64 x 64
+        for (i = 0; i+16 < N; i+=16) {
+            for (j = 0; j+16 < M; j+=16) {
+                for (k = i; k < i+16; ++k) {
+                    tmp1 = A[k][j];
+                    tmp2 = A[k][j + 1];
+                    tmp3 = A[k][j + 2];
+                    tmp4 = A[k][j + 3];
+                    tmp5 = A[k][j + 4];
+                    tmp6 = A[k][j + 5];
+                    tmp7 = A[k][j + 6];
+                    tmp8 = A[k][j + 7];
+                    B[j][k] = tmp1;
+                    B[j + 1][k] = tmp2;
+                    B[j + 2][k] = tmp3;
+                    B[j + 3][k] = tmp4;
+                    B[j + 4][k] = tmp5;
+                    B[j + 5][k] = tmp6;
+                    B[j + 6][k] = tmp7;
+                    B[j + 7][k] = tmp8;
+
+                    tmp1 = A[k][j + 8];
+                    tmp2 = A[k][j + 9];
+                    tmp3 = A[k][j + 10];
+                    tmp4 = A[k][j + 11];
+                    tmp5 = A[k][j + 12];
+                    tmp6 = A[k][j + 13];
+                    tmp7 = A[k][j + 14];
+                    tmp8 = A[k][j + 15];
+                    B[j + 8][k] = tmp1;
+                    B[j + 9][k] = tmp2;
+                    B[j + 10][k] = tmp3;
+                    B[j + 11][k] = tmp4;
+                    B[j + 12][k] = tmp5;
+                    B[j + 13][k] = tmp6;
+                    B[j + 14][k] = tmp7;
+                    B[j + 15][k] = tmp8;
+
+                }
+            }
+        }
+
+        for (k = i; k < N; ++k) {
+            for (l = 0; l < M; ++l){
+                B[l][k] = A[k][l];
+            }
+        }
+        for (k = 0; k < i; ++k) {
+            for (l = j; l < M; ++l) {
+                B[l][k] = A[k][l];
+            }
+        }
     }
 }
 
