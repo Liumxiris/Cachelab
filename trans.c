@@ -1,4 +1,9 @@
-/* 
+/*
+ * Kepei Lei
+ * Mingxi Liu
+ */
+
+/*
  * trans.c - Matrix transpose B = A^T
  *
  * Each transpose function must have a prototype of the form:
@@ -23,7 +28,7 @@ char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
     int tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
-    int i, j, k;
+    int i, j, k, l;
 
     if (N == 32) {
         // Divide into 8 x 8 blocks and utilize the allowed amount of variables to transfer them.
@@ -78,14 +83,14 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
                     B[i + 3][k + 4] = tmp8;
                 }
                 for(k= i;k< i + 4; ++k){
-                    tmp1 = B[k][j+4];
-                    tmp2 = B[k][j+5];
-                    tmp3 = B[k][j+6];
-                    tmp4 = B[k][j+7];
-                    tmp5 = A[j+4][k];
-                    tmp6 = A[j+5][k];
-                    tmp7 = A[j+6][k];
-                    tmp8 = A[j+7][k];
+                    tmp1 = B[k][j + 4];
+                    tmp2 = B[k][j + 5];
+                    tmp3 = B[k][j + 6];
+                    tmp4 = B[k][j + 7];
+                    tmp5 = A[j + 4][k];
+                    tmp6 = A[j + 5][k];
+                    tmp7 = A[j + 6][k];
+                    tmp8 = A[j + 7][k];
 
                     B[k + 4][j] = tmp1;
                     B[k + 4][j + 1] = tmp2;
@@ -107,6 +112,58 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
                     B[k][j + 6] = tmp3;
                     B[k][j + 7] = tmp4;
                 }
+            }
+        }
+    } else {
+        for (i = 0; i+16 < N; i+=16) {
+            for (j = 0; j+16 < M; j+=16) {
+                for (k = i; k < i+16; ++k) {
+                    tmp1 = A[k][j];
+                    tmp2 = A[k][j + 1];
+                    tmp3 = A[k][j + 2];
+                    tmp4 = A[k][j + 3];
+                    tmp5 = A[k][j + 4];
+                    tmp6 = A[k][j + 5];
+                    tmp7 = A[k][j + 6];
+                    tmp8 = A[k][j + 7];
+                    B[j][k] = tmp1;
+                    B[j + 1][k] = tmp2;
+                    B[j + 2][k] = tmp3;
+                    B[j + 3][k] = tmp4;
+                    B[j + 4][k] = tmp5;
+                    B[j + 5][k] = tmp6;
+                    B[j + 6][k] = tmp7;
+                    B[j + 7][k] = tmp8;
+
+                    tmp1 = A[k][j + 8];
+                    tmp2 = A[k][j + 9];
+                    tmp3 = A[k][j + 10];
+                    tmp4 = A[k][j + 11];
+                    tmp5 = A[k][j + 12];
+                    tmp6 = A[k][j + 13];
+                    tmp7 = A[k][j + 14];
+                    tmp8 = A[k][j + 15];
+                    B[j + 8][k] = tmp1;
+                    B[j + 9][k] = tmp2;
+                    B[j + 10][k] = tmp3;
+                    B[j + 11][k] = tmp4;
+                    B[j + 12][k] = tmp5;
+                    B[j + 13][k] = tmp6;
+                    B[j + 14][k] = tmp7;
+                    B[j + 15][k] = tmp8;
+
+                }
+            }
+        }
+
+        for (k = i; k < N; ++k) {
+            for (l = 0; l < M; ++l){
+                B[l][k] = A[k][l];
+            }
+        }
+        for (k = 0; k < i; ++k) {
+            for (l = j; l < M; ++l) {
+                B[l][k] = A[k][l];
             }
         }
     }
