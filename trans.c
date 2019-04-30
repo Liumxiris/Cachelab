@@ -36,22 +36,22 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
             for (j = 0; j < 4; j ++) {
                 for (k = i * 8; k < (i + 1) * 8; k ++) {
                     l = j * 8;
-                    tmp1 = A[k][h];
-                    tmp2 = A[k][h + 1];
-                    tmp3 = A[k][h + 2];
-                    tmp4 = A[k][h + 3];
-                    tmp5 = A[k][h + 4];
-                    tmp6 = A[k][h + 5];
-                    tmp7 = A[k][h + 6];
-                    tmp8 = A[k][h + 7];
-                    B[h][k] = tmp1;
-                    B[h + 1][k] = tmp2;
-                    B[h + 2][k] = tmp3;
-                    B[h + 3][k] = tmp4;
-                    B[h + 4][k] = tmp5;
-                    B[h + 5][k] = tmp6;
-                    B[h + 6][k] = tmp7;
-                    B[h + 7][k] = tmp8;
+                    tmp1 = A[k][l];
+                    tmp2 = A[k][l + 1];
+                    tmp3 = A[k][l + 2];
+                    tmp4 = A[k][l + 3];
+                    tmp5 = A[k][l + 4];
+                    tmp6 = A[k][l + 5];
+                    tmp7 = A[k][l + 6];
+                    tmp8 = A[k][l + 7];
+                    B[l][k] = tmp1;
+                    B[l + 1][k] = tmp2;
+                    B[l + 2][k] = tmp3;
+                    B[l + 3][k] = tmp4;
+                    B[l + 4][k] = tmp5;
+                    B[l + 5][k] = tmp6;
+                    B[l + 6][k] = tmp7;
+                    B[l + 7][k] = tmp8;
                 }
             }
         }
