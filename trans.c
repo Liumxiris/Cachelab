@@ -115,6 +115,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
             }
         }
     } else {
+        // Divide up into 16x16 blocks, and deal with left overs
         for (i = 0; i+16 < N; i+=16) {
             for (j = 0; j+16 < M; j+=16) {
                 for (k = i; k < i+16; ++k) {
